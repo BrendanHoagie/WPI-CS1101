@@ -1,0 +1,169 @@
+;; Homework 6 - Mutable Variables & Accumulator-Style Recursion
+
+;; Part 1 - Set!
+
+;; Problem 1
+
+(define-struct user (username mailbox))
+;; a User is a (make-user String string)
+;; Interp. represents a User with
+;;    a username that is a string
+;;    a mailbox that contains a ListOfMessages
+
+(define-struct message (username text read?))
+;; a Message is a (make-message String String Boolean
+;; Interp. represents a Message where
+;;    username is the name of the person sending the Message
+;;    text is all the text contained within the Message
+;;    read? is an indicator if the receiver has read the Message yet (true means they have, false means they have not)
+
+;; a ListOfUsers is one of:
+;;    empty
+;;    (cons User ListOfUser)
+;; interp. ListOfUser represents an email-system with many Users
+
+;; a ListOfMessages is one of:
+;;    empty
+;;    (cons Message ListOfMessage)
+
+;; Problem 2
+
+;; creates a new email-system (listOfUser) named mailsys with no users --> email system from assignment
+(define mailsys empty)
+
+;; creates a new User with username newuser and an empty mailbox
+(define newuser (make-user "newuser" empty))
+
+;; Problem 3
+
+;; add-user: String -> void
+;; consumes a username and produces void
+;; effect: adds the user with the same username as the one provided to the mail system
+
+(define (add-user username)
+  (set! mailsys (all-usernames username)))
+
+;; all-usernames: String -> ListOfUser
+;; consumes a username and adds the User with that name to the list of all users in the system
+(check-expect (all-usernames "david") (cons (make-user "david" empty) mailsys))
+(check-expect (all-usernames "joe") (cons (make-user "joe" empty) mailsys))
+
+(define (all-usernames username)
+  (cons (make-user username empty) mailsys))
+
+;; Problem 4
+
+;; send-email: String String String -> void
+;; consumes the username of the sender, the username of the recipient, and the text of an email and produces void.
+;; Effect: stores a new unread email in the recipient's mailbox
+
+(define (send-email sender-name recipient-name text)
+  (set-user-mailbox! (find-user recipient-name mailsys) (add-message sender-name recipient-name text)))
+
+;; add-message: String String String -> ListOfMessage
+;; consumes the username of the sender and recipient of an email and the text of the email,
+;; and produces a new email in the recipient's mailbox
+(check-expect (add-message "keith" "kaleb" "hello") (list (make-message "keith" "hello" #false)))
+
+(define (add-message sender-name recipient-name text)
+  (cons (make-message sender-name text #false) (user-mailbox (find-user recipient-name mailsys))))
+
+;; find-user: String -> User
+;; consumes a username and produces the User in the system with that username
+(check-expect (find-user "dimitri" mailsys) (make-user "dimitri" empty))
+(check-expect (find-user "sally" mailsys) (make-user "sally" empty))
+
+(define (find-user username system)
+  (cond [(empty? system) (make-user username empty)]
+        [(cons? system) (if (string=? username (user-username (first system)))
+                             (first system)
+                             (find-user username (rest system)))]))
+
+;; Problem 5
+;; get-unread-messages: String -> ListOfMessage
+;; consumes a username and produces all unread messages in that user's mailbox
+;; Effect: all unread messages in the user's mailbox are set to read
+
+(define (get-unread-messages username)
+  (local
+    [(define (read? user) (boolean=? false (message-read? user)))
+
+     (define UNREADMESSAGES empty)
+
+     (define (read-messages alom)
+       (cond [(empty? alom) empty]
+             [(cons? alom) (cons (set-message-read?! (first alom) #true) (read-messages (rest alom)))]))
+     ]
+    (begin
+      (set! UNREADMESSAGES (filter read? (user-mailbox (find-user username mailsys))))
+      (read-messages UNREADMESSAGES)
+      (if (empty? UNREADMESSAGES)
+          (display "there are no unread messages")
+          UNREADMESSAGES))))
+
+;; Problem 6
+;; most-messages: -> User
+;; produces the User with the largest number of messages in their mailbox
+
+(define (most-messages)
+  (local [(define user-acc (make-user "" empty))
+          
+          (define (find-user alou)
+            (cond [(empty? alou) user-acc]
+                  [(cons? alou) (if (>= (length (user-mailbox (first alou))) (length (user-mailbox user-acc)))
+                                    (begin
+                                      (set! user-acc (first alou))
+                                      (find-user (rest alou)))
+                                    (find-user (rest alou)))]))]
+    (find-user mailsys)))
+
+
+;; Problem 7 - Bonus Point email system tests
+
+;; Problem 3 tests
+(add-user "Frank")
+(add-user "Addy")
+(add-user "Brendan") 
+
+;; Problem 4 tests
+(send-email "Frank" "Brendan" "hey man did you eat my pbj")
+(send-email "Brendan" "Addy" "addy I absolutely ate his pbj")
+(send-email "Brendan" "Frank" "no")
+(send-email "Addy" "Brendan" "pbjeebies")
+
+;; Problem 5 tests
+(get-unread-messages "Addy")    ; should be (list (make-message "Brendan" "addy I absolutely ate his pbj" true)
+(get-unread-messages "Brendan") ; should be (list (make-message "Addy" "pbjeebies" true) (make-message "Frank" "hey man did you eat my pbj" true)
+(get-unread-messages "Frank")   ; should be (list (make-message "Brendan" "no" true)
+
+;; Problem 6 tests
+(most-messages) ; should be Brendan
+
+
+;; Part 2 - Accumulator-Style Recursion
+
+;; Problem 8
+;; total-string-length: ListOfString -> Natural
+;; consumes a ListOfString and produces the sum of the lengths of the Strings in that list
+(check-expect (total-string-length empty 0) 0)
+(check-expect (total-string-length (list "hello" "addy" "my name is" "mr dr godzilla III, esq") 0) 42)
+(check-expect (total-string-length (list "im" "mr brendan") 2) 18)
+
+
+(define (total-string-length alos string-acc)
+  (cond [(empty? alos) string-acc]
+        [(cons? alos) (+ (string-length (first alos))
+                         string-acc
+                         (total-string-length (rest alos) string-acc))]))
+
+
+;; Problem 9
+;; one-giant-string: ListOfString -> ListOfString
+;; consumes a ListOfString and produces a single String that contains everything from the ListOfString
+(check-expect (one-giant-string empty "") "")
+(check-expect (one-giant-string (list "hello" "world") "") "helloworld")
+(check-expect (one-giant-string (list "Addy" "Anu" "Mike" "Brendan") "") "AddyAnuMikeBrendan")
+
+(define (one-giant-string alos string-acc)
+  (cond [(empty? alos) string-acc]
+        [(cons? alos) (string-append (first alos) string-acc (one-giant-string (rest alos) string-acc))]))
