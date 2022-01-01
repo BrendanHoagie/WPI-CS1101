@@ -7,7 +7,8 @@ In this repo, you will find 7 projects. Each project serves as both our submissi
 All code was written in Racket, and was either provided in a starter file and expanded upon by or written from scratch by myself and my homework partner.
 
 # IMPORTANT
-This repo is for reference and educational purposes only. Please do your own work and not directly copy our code. There is no guarantee that all the code is perfect, and runs smoothly, and copying does not promote academic integrity. Instead use the code as a guide for the ideas and strategies for programming the assignments. Thank You - Brendan Hoag & Adelynn Martin
+This repo is for reference and educational purposes only. Please do your own work and not directly copy our code. There is no guarantee that all the code is perfect, and runs smoothly, and copying does not promote academic integrity. Instead use the code as a guide for the ideas and strategies for programming the assignments. Thank You 
+-Brendan Hoag & Adelynn Martin
 
 # Homework 0 - Composing Functions
 1. (20 Points)  Evaluate each of the following expressions. Show every step in the 
