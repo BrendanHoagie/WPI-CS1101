@@ -1,0 +1,244 @@
+;; Problem 1 
+
+;; define struct for river data definition
+(define-struct river (name pH DO tributaries))
+;;make-river constructor
+;;river name, pH, DO, tributaries, selectors
+;; a River is a (make-hurricane String Number Number aListOfRivers)
+;; (river-name)represents the name of the River
+;; (river-pH) represents the ph level of the River, anywhere between 1 and 14 6.5-8.5
+;; (river-DO) represents the DO level of the River in MG/L any number between 1-20
+;; (river-tributaries) represents the list of rivers that feed into this river
+
+;; a ListOfRivers is one of
+;;  empty
+;;  (cons River ListOfRivers)
+;; interp:  ListOfRivers represents a list of Rivers
+
+
+;; Problem 2
+(define SUN (make-river "Sun River" 7 9 empty))
+(define MADISON (make-river "Madison River" 7.2 9.5 empty))
+(define GALLATIN-RIVERS (make-river "Gallatin River" 6 9 empty))
+(define BEAVERHEAD (make-river "Beaverhead River" 7 11 empty))
+(define BIG-HOLE (make-river "Big Hole River" 6 16 empty))
+(define GARDNER (make-river "Gardner River" 7.3 20 empty))
+(define SHIELDS (make-river "Shields River" 8.2 19 empty))
+(define BOULDER-RIVERS (make-river "Boulder Rivers" 7.1 10 empty))
+(define JEFFERSON (make-river "Jefferson River" 8 9(list BEAVERHEAD BIG-HOLE)))
+(define YELLOWSTONE (make-river "Yellowstone River" 6.5 15(list GARDNER SHIELDS BOULDER-RIVERS)))
+(define MISSOURI (make-river "Missouri River" 7 6 (list JEFFERSON SUN YELLOWSTONE MADISON GALLATIN-RIVERS)))
+
+
+;; Problem 3
+
+; ;; river-fcn:  River ->
+; ;;
+; (define (river-fcn a-river)
+;     (...  (riverstuff ...)
+;           ( ... )
+;           ( ...   a-river)
+;           (lor-fcn (river-tributaries a-river))))
+;   
+;
+
+
+; ;; lor-fcn:  ListOfRiver ->
+; ;;
+; (define (lor-fcn alor)
+;     (cond [(empty? alor) (...)]
+;           [(cons? alor)  (...  (river-fcn (first alor))
+;                                (lor-fcn (rest alor)))]))
+
+;; Problem 4
+
+;; list-acidic-rivers: River --> ListOfString
+;; consumes a river system and produce a list of Rivers with a ph level lower than 6.5
+(check-expect (list-acidic-rivers MISSOURI) (list "Big Hole River" "Gallatin River"))
+(check-expect (list-acidic-rivers JEFFERSON) (list "Big Hole River"))
+(check-expect (list-acidic-rivers YELLOWSTONE) empty)
+
+
+(define(list-acidic-rivers a-river)
+  (if (> 6.5 (river-pH a-river))
+      (cons (river-name a-river) (list-of-acidic-rivers (river-tributaries a-river)))
+      (list-of-acidic-rivers (river-tributaries a-river))))
+
+;;list-of-acidic-rivers: AListOfRivers -->AListOfString
+;;to consume a ListOfRivers and produce a ListOfString
+(check-expect (list-of-acidic-rivers (list (make-river "Sun River" 7 9 empty))) empty)
+(check-expect (list-of-acidic-rivers empty) empty)
+
+(define (list-of-acidic-rivers alor)
+  (cond [(empty? alor) empty]
+        [(cons? alor)  (append (list-acidic-rivers (first alor))
+                               (list-of-acidic-rivers (rest alor)))]))
+
+;; Problem 5
+;; unhealthy?: River --> Boolean
+;; consumes a river system and produce true if any river in the system
+;; has a pH below 6.5 or over 8.5 or a DO under 6ppm
+(check-expect (unhealthy? (make-river "Allegheny" 6.5 7 (list (make-river "Kiskiminetas" 7 6 empty) (make-river "Clarion" 8 13.9 empty)))) false) ; all within limits
+(check-expect (unhealthy? (make-river "Ohio" 9 8.2 (list (make-river "Wabash" 6.7 9.8 empty)))) true)                                             ; pH above limit
+(check-expect (unhealthy? (make-river "Tennessee" 8 6 (list (make-river "Buffalo" 5.4 9.8 empty)))) true)                                         ; pH below limit
+(check-expect (unhealthy? (make-river "Oak" 6.7 9 (list (make-river "Duck" 7 6 (list (make-river "Conemaugh" 8 2 empty)))))) true )               ; DO below limit
+(check-expect (unhealthy? (make-river "White" 2.1 1.89 (list (make-river "Tippecanoe" 8.7 3.6 empty)))) true)                                     ; pH & DO below limit
+
+(define (unhealthy? a-river)
+  (local [(define (any-unhealthy? alor)
+            (cond [(empty? alor) false]
+                  [(cons?  alor) (if (boolean=? true (check-levels (first alor))) 
+                                     true
+                                     (any-unhealthy? (rest alor)))]))
+          
+          (define (check-levels a-river)
+            (cond [(< (river-pH a-river) 6.5) true]
+                  [(> (river-pH a-river) 8.5) true]
+                  [(< (river-DO a-river) 6) true]
+                  [else false]))
+          
+          (define (find-system a-river)
+            (cons a-river (all-tribs (river-tributaries a-river))))
+          
+          (define (all-tribs alor)
+            (cond [(empty? alor) empty]
+                  [(cons? alor) (if (boolean=? true (empty? (river-tributaries (first alor))))
+                                    (cons (first alor) (all-tribs (rest alor)))
+                                    (append (find-system (first alor)) (all-tribs (rest alor))))]))] 
+    (any-unhealthy? (find-system a-river))))
+
+;; Problem 6
+
+;; lower-all: River -> River
+;; consumes a River and produces the same River with its pH dropped by 0.3
+(check-expect (lower-all SUN) (make-river "Sun River" 6.7 9 empty))
+(check-expect (lower-all YELLOWSTONE) (make-river "Yellowstone River" 6.2 15 (list (make-river "Gardner River" 7 20 empty)
+                                                                                   (make-river "Shields River" 7.9 19 empty)
+                                                                                   (make-river "Boulder Rivers" 6.8 10 empty))))
+
+(define (lower-all a-river)
+  (make-river (river-name a-river)
+              (- (river-pH a-river) 0.3)
+              (river-DO a-river)
+              (lower-tribs (river-tributaries a-river))))
+ 
+
+;; lower-tribs:  ListOfRiver -> ListOfRiver
+;; consumes a ListOfRivers and produces a ListOfRiver with each River's Ph lowered by 0.3
+(check-expect (lower-tribs empty) empty)
+(check-expect (lower-tribs (list BEAVERHEAD BIG-HOLE)) (list (make-river "Beaverhead River" 6.7 11 empty)
+                                                             (make-river "Big Hole River" 5.7 16 empty)))
+
+(define (lower-tribs alor)
+    (cond [(empty? alor) empty]
+          [(cons? alor) (cons (lower-all (first alor))
+                                (lower-tribs (rest alor)))]))
+
+; Problem 7
+;; find-subsystem: String River ---> Boolean (or) String
+;; consumes a String and a Riversystem and produces a String if the name consumed matches
+;; the name of a river in the Riversystem, produces false if the name consumed is not in the River System
+(check-expect(find-subsystem "Sun River" SUN) "Sun River")
+(check-expect(find-subsystem "Oak River" SUN) false)
+(check-expect(find-subsystem "Beaverhead River" MISSOURI) "Beaverhead River")
+
+(define (find-subsystem a-name a-river)
+  (if(string=? (river-name a-river) a-name)
+     (river-name a-river)
+     (find-subsystem-list a-name (river-tributaries a-river))))
+
+
+;;find-subsystem-list: String AListOfRivers--> Boolean (or) String
+;; To consume AListOfRivers and a String and produce the name of the river if the conditions from find subsystem are met
+;;produces false otherwise
+(check-expect(find-subsystem-list "Boulder Rivers" (list (make-river "Yellowstone River" 6.7 15 (list
+                                                                                                 (make-river "Gardner River" 6.7 20 empty)
+                                                                                                 (make-river "Boulder Rivers" 6.7 10 empty))))) "Boulder Rivers")
+(check-expect(find-subsystem-list "brendanriver" empty) false)
+(check-expect(find-subsystem-list "BoulderRivers" (list (make-river "Yellowstone River" 6.7 15 (list
+                                                                                                (make-river "Gardner River" 6.7 20 empty)
+                                                                                                (make-river "Boulder Rivers" 6.7 10 empty))))) false)
+
+(define (find-subsystem-list a-name alor)
+  (cond [(empty? alor)  false ]
+        [(cons? alor) (if (boolean?(find-subsystem a-name(first alor)))
+                          (find-subsystem-list a-name (rest alor))
+                          a-name)]))
+                
+
+
+;;PART 2
+
+(define-struct menu-item (name kind vegetarian? quantity price))
+;; a MenuItem is a (make-menu-item String String Boolean Natural Number)
+;; interp:
+;;        MenuItem represents an item for an electronic menu system in a restaurant, where
+;;        name is the name of the menu item
+;;        kind indicates whether the item is a beverage, entree, appetizer, dessert
+;;        vegetarian?  is true if the item is vegetarian
+;;        qty is the number of that item that has been ordered
+;;        price is the cost of a single item
+
+;; an Order (ListOfMenuItem) is either
+;; empty, or
+;; (cons MenuItem Order)
+
+;;CONSTANTS FOR CHECK-EXPECTS
+(define APPY-JUICE (make-menu-item "appy juice" "beverage" true 3 0.5))
+(define BRENDANS-CAKE (make-menu-item "chocolate cake" "dessert" false 5 1))
+(define ADDYS-HD (make-menu-item "hotdog" "entree" false 1 50))
+(define KRAFT-SINGLE (make-menu-item "kraft single" "appetizer" false 1 1))
+(define KRAFT-DOUBLE (make-menu-item "kraft double" "appetizer" false 1 2))
+(define KRAFT-MILLION (make-menu-item "kraft million" "appetizer" false 1 1000000))
+(define BRENDANS-LEGUMES (make-menu-item "beans" "entree" true 80 9000))
+(define ADDYS-VEGGIES (make-menu-item "carots" "entree" true 80 1))
+(define VEGAN-OPTIONS (list APPY-JUICE BRENDANS-LEGUMES ADDYS-VEGGIES))
+(define ADDY-MEAL (list ADDYS-HD ADDYS-VEGGIES))
+(define BRENDAN-MEAL (list BRENDANS-LEGUMES BRENDANS-CAKE))
+(define KRAFT-SPECIAL (list KRAFT-SINGLE KRAFT-DOUBLE KRAFT-MILLION))
+(define GOOD-EATIN (list KRAFT-DOUBLE ADDYS-HD APPY-JUICE BRENDANS-CAKE))
+(define HOUSE-SPECIAL (list KRAFT-MILLION BRENDANS-LEGUMES))
+
+;; Problem 8
+
+;; dollar-menu-items:  ListOfMenu-items -> ListOfString
+;; consumes a list of menu items and produces a list of the names of all the items with prices of $1 or less
+(check-expect (dollar-menu-items VEGAN-OPTIONS) (list (menu-item-name APPY-JUICE) (menu-item-name ADDYS-VEGGIES)))
+(check-expect (dollar-menu-items HOUSE-SPECIAL) empty)
+
+(define (dollar-menu-items a-order)
+  (local
+    [(define (under-1? a-menu-item)
+       (<= (menu-item-price a-menu-item) 1))]
+    (map menu-item-name (filter under-1? a-order))))
+
+;; Problem 9
+;; all-same-kind?:  ListOfMenu-item String -> Boolean
+;; consumes a ListOfMenu-items and a kind of food and produces true if every item is of that kind
+(check-expect(all-same-kind? KRAFT-SPECIAL "dessert") false)
+(check-expect(all-same-kind? KRAFT-SPECIAL "appetizer") true)
+(check-expect(all-same-kind? HOUSE-SPECIAL "entree") false)
+
+(define (all-same-kind? a-order a-string)
+  (local
+    [(define(type-match? a-menu-item)
+       (string=?(menu-item-kind a-menu-item)a-string))]
+    (andmap type-match? a-order)))
+
+;; Problem 10
+;; list-expensive-vegetarian:  ListOfMenu-item Number -> ListOfMenu-item
+;; consumes a list of menu items and returns a list of those vegetarian items that exceed the given amount
+(check-expect(list-expensive-vegetarian VEGAN-OPTIONS 2)(list BRENDANS-LEGUMES))
+(check-expect(list-expensive-vegetarian VEGAN-OPTIONS 0)(list APPY-JUICE BRENDANS-LEGUMES ADDYS-VEGGIES))
+(check-expect(list-expensive-vegetarian VEGAN-OPTIONS 10000) empty)
+(check-expect(list-expensive-vegetarian KRAFT-SPECIAL 2) empty)
+(check-expect(list-expensive-vegetarian ADDY-MEAL 0.5)(list ADDYS-VEGGIES))
+
+(define(list-expensive-vegetarian a-order a-num)
+  (local
+    [(define (exceeds? a-menu-item)
+       (> (menu-item-price a-menu-item) a-num))
+     (define(veg? a-menu-item)
+       (boolean=? true (menu-item-vegetarian? a-menu-item)))]
+    (filter exceeds?(filter veg? a-order))))
+  
