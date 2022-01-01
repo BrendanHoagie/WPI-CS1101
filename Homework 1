@@ -1,0 +1,169 @@
+;; Homework 1 - Programming with Structs
+
+;; Problem 1
+
+(define-struct date (year month day))
+;; Date is (make-date Natural Natural Natural)
+;; interp. represents the theatrical release date of a film (in the US) where
+;;   year is the year of the film's release
+;;   month is the month of the film's release
+;;   day is the day of the film's release
+;;   (date? input) produces true if the input is of type Date, else produces false
+
+(define EDDATE (make-date 1981 10 15))    ; theatrical release of The Evil Dead
+(define SPVTRDATE (make-date 1998 6 24))  ; theatrical release of Saving Private Ryan
+(define JPARKDATE (make-date 1993 6 11))  ; theatrical release of Jurassic Park
+(define EMPIREDATE (make-date 1980 5 21)) ; theatrical relase of Star Wars Episode V: The Empire Strikes Back
+(define MULANDATE (make-date 1998 6 19))  ; theatrical release of Mulan
+
+(define-struct film (title genre rating running-time opening-date receipts-collected))
+;; Film is (make-film String String String Natural Date Number)
+;; Interp. represents a film where
+;;   title is the film's title
+;;   genre is the film's genre
+;;   rating is the film's MPAA rating
+;;   running-time is the film's length in minutes
+;;   opening-date is the Date of the film's release
+;;   receipts-collected is the total receipts collected millions USD
+;;   (film? input) produces true if the input is of type Film, else produces false
+
+(define EVILDEAD (make-film "The Evil Dead" "Horror" "NC-17" 85 EDDATE 29.4))
+(define SPVTR (make-film "Saving Private Ryan" "War" "R" 169 SPVTRDATE 482.3))
+(define JURASSICPARK (make-film "Jurassic Park" "Adventure" "PG-13" 124 JPARKDATE 1034))
+(define ESB (make-film "Star Wars Episode V: The Empire Strikes Back" "Sci-Fi" "PG" 124 EMPIREDATE 549))
+(define MULAN (make-film "Mulan" "Family" "G" 87 MULANDATE 304.3))
+
+;; Problem 3
+
+;; suitable-for-children?: Film -> Boolean
+;; consumes a Film and produces true if it is suitable for children (ratings G, PG, PG-13), else produces false
+(check-expect (suitable-for-children? EVILDEAD) #false)
+(check-expect (suitable-for-children? SPVTR) #false)
+(check-expect (suitable-for-children? JURASSICPARK) #true)
+(check-expect (suitable-for-children? ESB) #true)
+(check-expect (suitable-for-children? MULAN) #true)
+
+#;
+(define (fn-for-film afilm)              ;template
+  (... (film-title afilm)
+       (film-genre afilm)
+       (film-rating afilm)
+       (film-running-time afilm)
+       (film-opening-date afilm)
+       (film-receipts-collected afilm)))
+
+;(define (suitable-for-children? afilm) #true) ; stub
+
+(define (suitable-for-children? afilm)
+  (cond[(equal? (film-rating afilm) "G") #true]
+       [(equal? (film-rating afilm) "PG") #true]
+       [(equal? (film-rating afilm) "PG-13") #true]
+       [else #false]))
+
+;; Problem 4
+
+;; difference-in-receipts: Film Film -> Number
+;; consumes two films and produces the difference between the box office receipts for the films (in millions of USD)
+(check-expect (difference-in-receipts ESB MULAN) 244.7)
+(check-expect (difference-in-receipts MULAN ESB) 244.7)
+(check-expect (difference-in-receipts SPVTR JURASSICPARK) 551.7)
+(check-expect (difference-in-receipts EVILDEAD ESB) 519.6)
+(check-expect (difference-in-receipts JURASSICPARK JURASSICPARK) 0)
+
+#;
+(define (fn-for-film film1 film2)              ;template
+  (... (film-title film1)
+       (film-title film2)
+       (film-genre film1)
+       (film-genre film2)
+       (film-rating film1)
+       (film-rating film2)
+       (film-running-time film1)
+       (film-running-time film2)
+       (film-opening-date film1)
+       (film-opening-date film1)
+       (film-receipts-collected film1)
+       (film-receipts-collected film2)))
+
+;(define (difference-in-receipts film1 film2) 0) ; stub
+
+(define (difference-in-receipts film1 film2)
+  (abs(- (film-receipts-collected film1) (film-receipts-collected film2))))
+
+;; Problem 5
+
+;; modify-rating: Film String -> Film
+;; consumes a Film and a String and produces a Film with an updated rating
+(check-expect (modify-rating EVILDEAD "R") (make-film "The Evil Dead" "Horror" "R" 85 EDDATE 29.4))
+(check-expect (modify-rating SPVTR "NC-17") (make-film "Saving Private Ryan" "War" "NC-17" 169 SPVTRDATE 482.3))
+(check-expect (modify-rating JURASSICPARK "PG-13") (make-film "Jurassic Park" "Adventure" "PG-13" 124 JPARKDATE 1034))
+
+#;
+(define (fn-for-film afilm rating)        ; template
+  (... (film-title afilm)
+       (film-genre afilm)
+       (film-rating afilm)
+       (film-running-time afilm)
+       (film-opening-date afilm)
+       (film-receipts-collected afilm)
+       rating))
+
+; (define (modify-rating afilm rating) afilm) ; stub
+
+(define (modify-rating afilm rating)
+  (make-film
+   (film-title afilm)
+   (film-genre afilm)
+   rating
+   (film-running-time afilm)
+   (film-opening-date afilm)
+   (film-receipts-collected afilm)))
+
+;; Problem 6
+
+;; opens-before?: Film Date -> Boolean
+;; consumes a Film and a Date and produces true if the film 
+;; opened before that date, else produces false
+
+;; two constants for testing opens-before?
+(define AFTERALLDATE (make-date 2021 9 4))    ; Date after all movies created above
+(define BEFOREALLDATE (make-date 1969 7 20))  ; Date before all movies created above
+(define YMBEDDATE (make-date 1981 9 15))      ; Date that is same year but month before EVILDEAD
+(define YMAEDDATE (make-date 1981 11 15))     ; Date that is same year but month after EVILDEAD
+(define YMDBSPVTRDATE (make-date 1998 6 23))  ; Date that is same year & month but day before SPVTR
+(define YMDASPVTRDATE (make-date 1998 6 25))  ; Date that is same year & month but day after SPVTR
+
+
+(check-expect (opens-before? JURASSICPARK SPVTRDATE) #true) ; Uses another Film's Date
+(check-expect (opens-before? MULAN AFTERALLDATE) #true)     ; Uses Date after all movies created above
+(check-expect (opens-before? MULAN BEFOREALLDATE) #false)   ; Uses Date before all movies created above
+(check-expect (opens-before? EVILDEAD YMBEDDATE) #false)    ; Uses Date that is same year but month before EVILDEAD
+(check-expect (opens-before? EVILDEAD YMAEDDATE) #true)     ; Uses Date that is same year but month after EVILDEAD
+(check-expect (opens-before? SPVTR YMDBSPVTRDATE) #false)   ; Uses Date that is same year & month but day before SPVTR
+(check-expect (opens-before? SPVTR YMDASPVTRDATE) #true)    ; Uses Date that is same year & month but day after SPVTR
+(check-expect (opens-before? ESB EMPIREDATE) #false)        ; Uses Date that is Film's opening day
+                                                            ;     Produces false because opening day is not before
+
+#;
+(define (fn-for-film afilm adate)          ; template
+  (... (film-title afilm)
+       (film-genre afilm)
+       (film-rating afilm)
+       (film-running-time afilm)
+       (film-opening-date afilm)
+       (film-receipts-collected afilm)
+       (date-year adate)
+       (date-month adate)
+       (date-day adate)))
+
+; (define (opens-before? afilm adate) #false) ; stub
+
+(define (opens-before? afilm adate)
+  (cond [(< (date-year (film-opening-date afilm)) (date-year adate)) #true]
+        [(and (< (date-month (film-opening-date afilm)) (date-month adate))
+              (= (date-year (film-opening-date afilm)) (date-year adate))) #true]
+        [(and (< (date-day (film-opening-date afilm)) (date-day adate))
+              (= (date-month (film-opening-date afilm)) (date-month adate))
+              (= (date-year (film-opening-date afilm)) (date-year adate))) #true]
+        [else #false]))
+
