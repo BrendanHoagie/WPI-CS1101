@@ -1,0 +1,209 @@
+;; Homework 2 - Itemizations & Simple List Processing
+
+;; Problem 1
+
+(define-struct hurricane (name category max-sustained-winds velocity heading))
+;; Hurricane is (make-hurricane String Natural Number Number String)
+;; Interp. represents a Hurricane where
+;;   name is the name of the Hurricane
+;;   category is the category number of the Hurricane (a natural number from 1-5, inclusive)
+;;   max-sustained-winds is the speed of the maximum sustained winds (in miles per hour)
+;;   velocity is the velocity of the Hurricane (in miles per hour)
+;;   heading is the heading of the Hurricane (represented using cardinal & ordinal direction abrieviations, ie NNW is North-by-North-West)
+
+;; example of a hurricane
+(define IDA (make-hurricane "Ida" 4 150 10 "NNW"))
+
+(define-struct thunderstorm (amount-rainfall max-wind-gust velocity heading))
+;; Thunderstorm is (make-thunderstorm Number Number Number String)
+;; Interp. represents a Thunderstorm where
+;;   amount-rainfall is the number of inches of rainfall
+;;   max-wind-gust is the maximum wind gust speed (in miles per hour)
+;;   velocity is the velocity of the Thunderstorm (in miles per hour)
+;;   heading is the heading of the Thunderstorm (represented using cardinal & ordinal direction abrieviations, ie NNW is North-by-North-West)
+
+;; example of a thunderstorm
+(define LOCAL-THUNDERSTORM (make-thunderstorm 8.5 15 2 "SSE"))
+
+(define-struct fire (area days people-displaced))
+;; Fire is (make-fire Number Number Natural)
+;; Interp. represents a Fire where
+;;   area is the total area the Fire covers (in square miles)
+;;   days is the number of days the Fire has been raging for
+;;   people-displaced is the number of people that have fled their location due to the Fire
+
+(define CALIFORNIA-FIRE (make-fire 10 20 30))
+
+;; Storm is one of
+;;   - Hurricane
+;;   - Thunderstorm
+;;   - Fire
+;; Interp. a storm that is either a Hurricane, Thunderstorm, or Fire
+
+;; Problem 2
+
+
+; template for Hurricane-fn
+
+;; fn-for-hurricane: Hurricane ->
+;; ...
+#;  
+(define (fn-for-hurricane ahurricane)
+  (... (hurricane-name ahurricane)                ; String
+       (hurricane-category ahurricane)            ; Natural
+       (hurricane-max-sustained-winds ahurricane) ; Number
+       (hurricane-velocity ahurricane)            ; Number
+       (hurricane-heading ahurricane)))           ; String
+
+
+; template for Thunderstorm-fn
+
+;; fn-for-thunderstorm: Thunderstorm ->
+;; ...
+#;
+(define (fn-for-thunderstorm athunderstorm)
+  (... (thunderstorm-amount-rainfall athunderstorm) ; Number
+       (thunderstorm-max-wind-gust athunderstorm)   ; Number
+       (thunderstorm-velocity athunderstorm)        ; Number
+       (thunderstorm-heading athunderstorm)))       ; String
+
+
+; template for Fire-fn
+
+;; fn-for-thunderstorm: Thunderstorm ->
+;; ...
+#;
+(define (fn-for-fire afire)
+  (... (fire-area afire)               ; Number
+       (fire-days afire)               ; Number
+       (fire-people-displaced afire))) ; Natural
+
+
+; template for a Storm
+
+;; fn-for-storm: Storm ->
+;; ...
+#;   
+(define (fn-for-storm astorm )
+  (cond [(hurricane? astorm) (... (hurricane-name astorm)
+                                  (hurricane-category astorm)
+                                  (hurricane-max-sustained-winds astorm)
+                                  (hurricane-velocity astorm))]   
+        [(thunderstorm? astorm) (... (thunderstorm-amount-rainfall astorm)
+                                     (thunderstorm-max-wind-gust astorm)
+                                     (thunderstorm-velocity astorm))]
+        [(fire? astorm) (... (fire-area astorm)
+                             (fire-days astorm)
+                             (fire-people-displaced astorm))]))
+
+;; Problem 3
+
+;; high-impact?: Storm -> Boolean
+;; consumes a storm and returns true if  the storm is
+;;   a category 4 or 5 hurricane,
+;;   a thunderstorm with more than 3 inches of rainfall and winds exceeding 60mph
+;;   a fire covering at least 50 square miles.
+(check-expect (high-impact? (make-hurricane "Patti" 1 50 150 "NNW")) #false)
+(check-expect (high-impact? (make-hurricane "Sam" 2 50 150 "NNW")) #false)
+(check-expect (high-impact? (make-hurricane "Tim" 3 50 150 "NNW")) #false)
+(check-expect (high-impact? (make-hurricane "Jake" 4 50 150 "NNW")) #true)
+(check-expect (high-impact? (make-hurricane "Amir" 5 50 150 "NNW")) #true)
+
+(check-expect (high-impact? (make-thunderstorm 4 70 15 "SSE")) #true)
+(check-expect (high-impact? (make-thunderstorm 3 70 15 "SSE")) #false)
+(check-expect (high-impact? (make-thunderstorm 4 50 15 "SSE")) #false)
+(check-expect (high-impact? (make-thunderstorm 3 50 15 "SSE")) #false)
+
+(check-expect (high-impact? (make-fire 70 2 150)) #true)
+(check-expect (high-impact? (make-fire 50 2 150)) #true)
+(check-expect (high-impact? (make-fire 30 2 150)) #false)
+
+(define (high-impact? astorm)     
+  (cond [(hurricane? astorm) (>= (hurricane-category astorm) 4)]   
+        [(thunderstorm? astorm) (and (> (thunderstorm-amount-rainfall astorm) 3)
+                                     (> (thunderstorm-max-wind-gust astorm) 60))]
+        [(fire? astorm) (>= (fire-area astorm) 50)]))
+
+;; Problem 4
+
+;; change-heading: Storm String -> Storm
+;; Consumes a Storm and a heading and produces a Storm with that heading
+(check-expect (change-heading IDA "N") (make-hurricane "Ida" 4 150 10 "N"))
+(check-expect (change-heading LOCAL-THUNDERSTORM "SSE") (make-thunderstorm 8.5 15 2 "SSE"))
+(check-expect (change-heading CALIFORNIA-FIRE "W") (make-fire 10 20 30))
+
+(define (change-heading astorm aheading)
+  (cond [(hurricane? astorm) (make-hurricane (hurricane-name astorm)
+                                             (hurricane-category astorm)
+                                             (hurricane-max-sustained-winds astorm)
+                                             (hurricane-velocity astorm)
+                                             aheading)]   
+        [(thunderstorm? astorm) (make-thunderstorm (thunderstorm-amount-rainfall astorm)
+                                                   (thunderstorm-max-wind-gust astorm)
+                                                   (thunderstorm-velocity astorm)
+                                                   aheading)]
+        [(fire? astorm) (make-fire (fire-area astorm)
+                                   (fire-days astorm)
+                                   (fire-people-displaced astorm))]))
+
+;; Problem 5
+
+;; a ListOfString is one of
+;;  empty
+;;  (cons String ListOfString)
+;; interp:  ListOfString represents a list of strings
+
+;; character-count: ListOfString -> Natural
+;; consumes a list of string and produces the total number of characters in the list
+
+(check-expect (character-count (cons "Hello" (cons "World" empty))) 10)
+(check-expect (character-count (cons "HelloWorld" empty)) 10)
+(check-expect (character-count empty) 0)
+
+(define (character-count alos)
+  (cond [(empty? alos) 0]
+        [(cons? alos) (+ (string-length (first alos)) (character-count (rest alos)))]))
+
+;; Problem 6
+
+;; a ListOfString is one of
+;;  empty
+;;  (cons String ListOfString)
+;; interp:  ListOfString represents a list of strings
+
+;; numeric-strings: ListOfString -> ListOfString
+;; Consumes a list of strings and produced contains only those strings from the original list
+;; that consist entirely of numeric characters
+
+(check-expect (numeric-strings (cons "123" (cons "456" (cons "789" empty)))) (cons "123" (cons "456" (cons "789" empty))))
+(check-expect (numeric-strings (cons "Apple" (cons "456" (cons "789" empty)))) (cons "456" (cons "789" empty)))
+(check-expect (numeric-strings (cons "123" (cons "456" (cons "Apple" empty)))) (cons "123" (cons "456" empty)))
+(check-expect (numeric-strings (cons "123" (cons "456Apple" (cons "789" empty)))) (cons "123" (cons "789" empty)))
+(check-expect (numeric-strings (cons "Apple" (cons "Apple" (cons "Apple" empty)))) empty)
+
+(define (numeric-strings alos)
+  (cond [(empty? alos) empty]
+        [(cons? alos) (if (string-numeric? (first alos))
+                          (cons (first alos) (numeric-strings (rest alos)))
+                          (numeric-strings (rest alos)))]))
+
+;; Problem 7
+
+;; a ListOfNatural is one of
+;;   empty
+;;   (cons Natural ListOfNatural)
+;; Interp. a ListOfNatural represents a list of Naturals
+
+;; lengths-of-strings: ListOfString -> ListOfNatural
+;; consumes a ListOfString and produces a list of
+;; the lengths of each of the strings in the given ListOfString. 
+
+(check-expect (lengths-of-strings (cons "Hello" empty)) (cons 5 empty))
+(check-expect (lengths-of-strings (cons "Hello" (cons "World" empty))) (cons 5 (cons 5 empty)))
+(check-expect (lengths-of-strings (cons "" empty)) (cons 0 empty))
+(check-expect (lengths-of-strings empty) empty)
+
+(define (lengths-of-strings alos)
+  (cond [(empty? alos) empty]
+        [(cons? alos)  (cons (string-length (first alos))
+                             (lengths-of-strings (rest alos)))]))
