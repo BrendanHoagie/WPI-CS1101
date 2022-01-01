@@ -1,0 +1,352 @@
+;; Homework 4 - Binary Search Trees
+
+;; Problem 1
+
+(define-struct student (name email))
+;; a Student is a (make-student String String)
+;; Interp. represents a Student where
+;;    name is the name of the Student
+;;    email is the Student's email address
+
+;; a ListOfStudent is one of
+;;    empty
+;;    (cons Student ListOfStudent)
+
+;; STUDENT EXAMPLES
+(define JOE (make-student "Joe" "jk@wpi.edu"))
+(define SALLY (make-student "Sally" "sp@wpi.edu"))
+
+;; LISTOFSTUDENT EXAMPLES
+(define CS1101STUDENTS (list JOE SALLY (make-student "David" "dj@wpi.edu")))
+(define CS1102STUDENTS (list (make-student "Steven" "sb@wpi.edu")
+                             (make-student "Noah" "nr@wpi.edu")
+                             (make-student "Sidney" "sm@wpi.edu")
+                             (make-student "Charlotte" "cc@wpi.edu")))
+
+;; a BST is one of
+;;   false
+;;   CourseNode
+;; invariant: all courses in the left BST of a coursenode are
+;; smaller than the coursenode's course-id, and all courses in the right 
+;; BST of a coursenode are larger than the coursenode's course-id.
+
+(define-struct coursenode (course-id title instructor students left right))
+;; a CourseNode is a (make-coursenode Number String String ListOfStudent BST BST)
+;; Interp. represents a Course where
+;;    course-id is a Number representing the department and the specific course in that department (written in the form XX.XXX)
+;;    title is the title of the course
+;;    instructor is the name of the instructor
+;;    students is the ListOfStudents enrolled in the class
+;;    left is a lower-level course in the same department as the course of the Coursenode
+;;    right is a higher-level course in the same department as the course of the Coursenode
+
+;; Problem 2
+
+(define PHTREE (make-coursenode 100.100 "Mechanics" "Dr. Wareheim" (list (make-student "Max" "max.233@gmail.com")
+                                                                         (make-student "Peter" "peteyg@hotmail.com")
+                                                                         (make-student "Rick" "rdepaula@gmail.com"))
+                                (make-coursenode 100.50 "Intro to Physics" "Prof. Robinson" (list (make-student "Jon" "JonArbuckle@gmail.com"))
+                                                 #false
+                                                 (make-coursenode 100.75 "Classic Physics" "Prof. Heidecker" (list (make-student "Adam" "adamegate@devry.edu")
+                                                                                                                   (make-student "Kristina" "krism@aol.com")
+                                                                                                                   (make-student "Blaise" "blaisec@cia.gov"))
+                                                                  #false #false))
+                                (make-coursenode 100.150 "Nuclear Physics" "Dr. Brule" (list (make-student "Nathan" "bignate@mymail.com")
+                                                                                             (make-student "Anthony" "tonyb@hotmail")
+                                                                                             (make-student "Callista" "ccc@aol.com"))
+                                                 (make-coursenode 100.125 "Atomic Physics" "Mrs. Harrison" (list empty)
+                                                                  #false #false)
+                                                 #false)))
+
+(define CSTREE (make-coursenode 94.120 "Intro to CS" "Dillon"
+                                (list (make-student "Joe" "joemama@hotmail.com")
+                                      (make-student "Kate" "Kate@gmail.com"))
+                                (make-coursenode 94.111 "Advanced Intro to CS" "Bill"
+                                                 (list(make-student "Gina" "gina@gmail.com"))
+                                                 false false)
+                                (make-coursenode 94.150 "Systems" "David"
+                                                 (list(make-student "Jessie" "Jess@gmail.com")
+                                                      (make-student "Clara" "c@gmail.com"))
+                                                 (make-coursenode 94.125 "C++" "George"
+                                                                  (list (make-student "Charlie" "charlie@gmail.com"))
+                                                                  false false)
+                                                 (make-coursenode 94.170 "Algorithms" "Samuel"
+                                                                  (list (make-student "Brandon" "brandie@gmail.com")
+                                                                        (make-student "Neal" "neal@yahoo.com")) false false))))
+
+;; problem 3
+
+;; ;; fn-for-student: Student ->
+;; ;;...
+#;
+(define (fn-for-student a-student)
+  (student-name a-student)
+  (student-email a-student))
+
+;; ;; fn-for-ListOfStudent: LOS ->
+;; ;;...
+#;
+(define (fn-for-ListOfStudent alos)
+  (cond [(empty? alos) (...)]
+        [(cons? alos) (... (first alos)
+                           (fn-for-ListOfStudent (rest alos)))]))
+
+;; ;; fn-for-BST: BST
+;; ;; ...
+#;
+(define (fn-for-BST a-coursenode)
+  (cond [(boolean? a-coursenode) (... )]
+        [(coursenode? a-coursenode) (... (coursenode stuff ... )
+                                         ( ... )
+                                         ( ... a-coursenode)
+                                         (fn-for-BST (coursenode-left  a-coursenode))
+                                         (fn-for-BST (coursenode-right a-coursenode)))]))
+
+
+;; ;; fn-for-coursenode: CourseNode -> 
+;; ;;...
+#;
+(define (fn-for-coursenode a-node)
+  (coursenode-course-id a-node)
+  (coursenode-title a-node)
+  (coursenode-instructor a-node)
+  (coursenode-students a-node)
+  (coursenode-left BST)
+  (coursenode-right BST))
+
+;; Problem 4
+
+;; any-taught-by?: BST String -> Boolean
+;; consumes a binary search tree and the name of an instructor
+;; and produces true if any of the courses in the tree are taught by the given instructor
+(check-expect (any-taught-by? PHTREE "Prof. Robinson") #true)
+(check-expect (any-taught-by? CSTREE "Bill") #true)
+(check-expect (any-taught-by? PHTREE "Dr. Tobbagan") #false)
+(check-expect (any-taught-by? CSTREE "Dr. Robotnik") #false)
+
+(define (any-taught-by? a-coursenode an-instructor)
+  (cond [(boolean? a-coursenode) #false]
+        [(coursenode? a-coursenode) (if (string=? an-instructor (coursenode-instructor a-coursenode))
+                                        #true
+                                        (or (any-taught-by? (coursenode-left  a-coursenode) an-instructor)
+                                            (any-taught-by? (coursenode-right a-coursenode) an-instructor)))]))
+
+;; Problem 5
+
+;; drop-student: BST Number String -> BST
+;; consumes a binary search tree, course number, and email address of a student,
+;; and produces a binary search tree with that student dropped from the course.
+(check-expect (drop-student PHTREE 100.150 "bignate@mymail.com")(make-coursenode 100.100 "Mechanics" "Dr. Wareheim" (list (make-student "Max" "max.233@gmail.com")
+                                                                                                                          (make-student "Peter" "peteyg@hotmail.com")
+                                                                                                                          (make-student "Rick" "rdepaula@gmail.com"))
+                                                                                 (make-coursenode 100.50 "Intro to Physics" "Prof. Robinson" (list (make-student "Jon" "JonArbuckle@gmail.com"))
+                                                                                                  #false
+                                                                                                  (make-coursenode 100.75 "Classic Physics" "Prof. Heidecker" (list (make-student "Adam" "adamegate@devry.edu")
+                                                                                                                                                                    (make-student "Kristina" "krism@aol.com")
+                                                                                                                                                                    (make-student "Blaise" "blaisec@cia.gov"))
+                                                                                                                   #false #false))
+                                                                                 (make-coursenode 100.150 "Nuclear Physics" "Dr. Brule" (list (make-student "Anthony" "tonyb@hotmail")
+                                                                                                                                              (make-student "Callista" "ccc@aol.com"))
+                                                                                                  (make-coursenode 100.125 "Atomic Physics" "Mrs. Harrison" (list empty)
+                                                                                                                   #false #false)
+                                                                                                  #false)))
+(check-expect (drop-student CSTREE 94.111 "gina@gmail.com") (make-coursenode 94.120 "Intro to CS" "Dillon"
+                                                                             (list (make-student "Joe" "joemama@hotmail.com")
+                                                                                   (make-student "Kate" "Kate@gmail.com"))
+                                                                             (make-coursenode 94.111 "Advanced Intro to CS" "Bill"
+                                                                                              empty
+                                                                                              false false)
+                                                                             (make-coursenode 94.150 "Systems" "David"
+                                                                                              (list(make-student "Jessie" "Jess@gmail.com")
+                                                                                                   (make-student "Clara" "c@gmail.com"))
+                                                                                              (make-coursenode 94.125 "C++" "George"
+                                                                                                               (list (make-student "Charlie" "charlie@gmail.com"))
+                                                                                                               false false)
+                                                                                              (make-coursenode 94.170 "Algorithms" "Samuel"
+                                                                                                               (list (make-student "Brandon" "brandie@gmail.com")
+                                                                                                                     (make-student "Neal" "neal@yahoo.com")) false false))))
+
+(check-expect (drop-student CSTREE 94.170 "dummyemail@not-a-real-website.com")(make-coursenode 94.120 "Intro to CS" "Dillon"
+                                                                                               (list (make-student "Joe" "joemama@hotmail.com")
+                                                                                                     (make-student "Kate" "Kate@gmail.com"))
+                                                                                               (make-coursenode 94.111 "Advanced Intro to CS" "Bill"
+                                                                                                                (list(make-student "Gina" "gina@gmail.com"))
+                                                                                                                false false)
+                                                                                               (make-coursenode 94.150 "Systems" "David"
+                                                                                                                (list(make-student "Jessie" "Jess@gmail.com")
+                                                                                                                     (make-student "Clara" "c@gmail.com"))
+                                                                                                                (make-coursenode 94.125 "C++" "George"
+                                                                                                                                 (list (make-student "Charlie" "charlie@gmail.com"))
+                                                                                                                                 false false)
+                                                                                                                (make-coursenode 94.170 "Algorithms" "Samuel"
+                                                                                                                                 (list (make-student "Brandon" "brandie@gmail.com")
+                                                                                                                                       (make-student "Neal" "neal@yahoo.com")) false false))))
+
+
+(define (drop-student a-coursenode course-num student-email)
+  (cond [(= course-num (coursenode-course-id a-coursenode))
+         (make-coursenode
+          course-num
+          (coursenode-title a-coursenode)
+          (coursenode-instructor a-coursenode)
+          (update-student-list (coursenode-students a-coursenode) student-email) ;; call helper (update-student-list alos) to update the list
+          (coursenode-left a-coursenode)
+          (coursenode-right a-coursenode))]
+        [(< course-num (coursenode-course-id a-coursenode))
+         (make-coursenode
+          (coursenode-course-id a-coursenode)
+          (coursenode-title a-coursenode)
+          (coursenode-instructor a-coursenode)
+          (coursenode-students a-coursenode)
+          (drop-student (coursenode-left a-coursenode) course-num student-email)
+          (coursenode-right a-coursenode))]
+        [(> course-num (coursenode-course-id a-coursenode))
+         (make-coursenode
+          (coursenode-course-id a-coursenode)
+          (coursenode-title a-coursenode)
+          (coursenode-instructor a-coursenode)
+          (coursenode-students a-coursenode)
+          (coursenode-left a-coursenode)
+          (drop-student (coursenode-right a-coursenode) course-num student-email))]))
+                                            
+;; update-student-list: LOS String -> LOS
+;; consumes a ListOfStudent and a student's email and produces
+;; a ListOfStudents with the given student removed
+(check-expect (update-student-list empty "jk@wpi.edu") empty)
+(check-expect (update-student-list (list (make-student "Joe" "jk@wpi.edu")
+                                         (make-student "Sally" "sp@wpi.edu")
+                                         (make-student "Mike" "mc@wpi.edu")) "jk@wpi.edu") (list (make-student "Sally" "sp@wpi.edu")
+                                                                                                 (make-student "Mike" "mc@wpi.edu")))
+(check-expect (update-student-list (list (make-student "Joe" "jk@wpi.edu")
+                                         (make-student "Sally" "sp@wpi.edu")
+                                         (make-student "Mike" "mc@wpi.edu")) "sp@wpi.edu") (list (make-student "Joe" "jk@wpi.edu")
+                                                                                                 (make-student "Mike" "mc@wpi.edu")))
+(check-expect (update-student-list (list (make-student "Joe" "jk@wpi.edu")
+                                         (make-student "Sally" "sp@wpi.edu")
+                                         (make-student "Mike" "mc@wpi.edu")) "mc@wpi.edu") (list (make-student "Joe" "jk@wpi.edu")
+                                                                                                 (make-student "Sally" "sp@wpi.edu")))
+(check-expect (update-student-list (list (make-student "Joe" "jk@wpi.edu")
+                                         (make-student "Sally" "sp@wpi.edu")
+                                         (make-student "Mike" "mc@wpi.edu")) "bh@wpi.edu") (list (make-student "Joe" "jk@wpi.edu")
+                                                                                                 (make-student "Sally" "sp@wpi.edu")
+                                                                                                 (make-student "Mike" "mc@wpi.edu")))
+
+(define (update-student-list alos student-email)
+  (cond [(empty? alos) empty]
+        [(cons? alos) (if (string=? student-email (find-email (first alos)))
+                          (rest alos)
+                          (append (list (first alos)) (update-student-list (rest alos) student-email)))]))
+
+
+;; find-email: Student -> String
+;; consumes a Student and returns the student's email
+(check-expect (find-email (make-student "Joe" "jk@wpi.edu")) "jk@wpi.edu")
+(check-expect (find-email (make-student "Sally" "sp@wpi.edu")) "sp@wpi.edu")
+(check-expect (find-email (make-student "Mike" "mc@wpi.edu")) "mc@wpi.edu")
+
+(define (find-email a-student)
+  (student-email a-student))
+
+;; Problem 6
+
+;; list-titles-in-order-by-coursenum: BST -> ListOfString
+;; consumes a binary search tree and produces the list of the titles of the classes
+;; in order from least to greatest
+(check-expect (list-titles-in-order-by-coursenum CSTREE) (list
+                                                          "Advanced Intro to CS"
+                                                          "Intro to CS"
+                                                          "C++"
+                                                          "Systems"
+                                                          "Algorithms"))
+(check-expect (list-titles-in-order-by-coursenum PHTREE) (list
+                                                          "Intro to Physics"
+                                                          "Classic Physics"
+                                                          "Mechanics"
+                                                          "Atomic Physics"
+                                                          "Nuclear Physics"))
+(define (list-titles-in-order-by-coursenum a-coursenode)
+  (cond [(boolean? a-coursenode) empty]
+        [(coursenode? a-coursenode) (append (list-titles-in-order-by-coursenum (coursenode-left a-coursenode))
+                                            (cons (coursenode-title a-coursenode) empty)
+                                            (list-titles-in-order-by-coursenum (coursenode-right a-coursenode)))]))
+
+;; Problem 7
+;;add-course: BST Number String String --> BST
+;;To consume a coursenode, course ID number, course title, and instructor name to make up a course
+;;and to produce a BST with the course inserted
+
+(define (add-course a-coursenode coursenum coursetitle instructname) 
+  (cond [(boolean? a-coursenode) (make-coursenode
+                                  coursenum
+                                  coursetitle
+                                  instructname
+                                  empty
+                                  #false
+                                  #false)]
+        [(coursenode? a-coursenode) (if (< coursenum (coursenode-course-id a-coursenode))                                 
+                                        (make-coursenode
+                                         (coursenode-course-id a-coursenode)                                                  
+                                         (coursenode-title a-coursenode)
+                                         (coursenode-instructor a-coursenode)
+                                         (coursenode-students a-coursenode)
+                                         (add-course (coursenode-left a-coursenode) coursenum coursetitle instructname)
+                                         (coursenode-right a-coursenode))
+                                        (make-coursenode
+                                         (coursenode-course-id a-coursenode)                                                  
+                                         (coursenode-title a-coursenode)
+                                         (coursenode-instructor a-coursenode)
+                                         (coursenode-students a-coursenode)
+                                         (coursenode-left a-coursenode)
+                                         (add-course (coursenode-right  a-coursenode) coursenum coursetitle instructname)))]))
+
+
+(check-expect (add-course CSTREE 94.126 "idk cs courses lol" "dr berdon") (make-coursenode 94.120 "Intro to CS" "Dillon"
+                                                                                           (list (make-student "Joe" "joemama@hotmail.com")
+                                                                                                 (make-student "Kate" "Kate@gmail.com"))
+                                                                                           (make-coursenode 94.111 "Advanced Intro to CS" "Bill"
+                                                                                                            (list(make-student "Gina" "gina@gmail.com"))
+                                                                                                            false false)
+                                                                                           (make-coursenode 94.150 "Systems" "David"
+                                                                                                            (list(make-student "Jessie" "Jess@gmail.com")
+                                                                                                                 (make-student "Clara" "c@gmail.com"))
+                                                                                                            (make-coursenode 94.125 "C++" "George"
+                                                                                                                             (list (make-student "Charlie" "charlie@gmail.com"))
+                                                                                                                             false
+                                                                                                                             (make-coursenode 94.126 "idk cs courses lol" "dr berdon" empty false false))
+                                                                                                            (make-coursenode 94.170 "Algorithms" "Samuel"
+                                                                                                                             (list (make-student "Brandon" "brandie@gmail.com")
+                                                                                                                                   (make-student "Neal" "neal@yahoo.com")) false false))))
+
+(check-expect (add-course PHTREE 100.126 "the physics of hitting people with doors" "mrs adlym") (make-coursenode 100.100 "Mechanics" "Dr. Wareheim" (list (make-student "Max" "max.233@gmail.com")
+                                                                                                                                                           (make-student "Peter" "peteyg@hotmail.com")
+                                                                                                                                                           (make-student "Rick" "rdepaula@gmail.com"))
+                                                                                                                  (make-coursenode 100.50 "Intro to Physics" "Prof. Robinson" (list (make-student "Jon" "JonArbuckle@gmail.com")) false
+                                                                                                                                   (make-coursenode 100.75 "Classic Physics" "Prof. Heidecker" (list (make-student "Adam" "adamegate@devry.edu")
+                                                                                                                                                                                                     (make-student "Kristina" "krism@aol.com")
+                                                                                                                                                                                                     (make-student "Blaise" "blaisec@cia.gov")) false false))
+                                                                                                                  (make-coursenode
+                                                                                                                   100.150
+                                                                                                                   "Nuclear Physics" "Dr. Brule" (list (make-student "Nathan" "bignate@mymail.com")
+                                                                                                                                                       (make-student "Anthony" "tonyb@hotmail")
+                                                                                                                                                       (make-student "Callista" "ccc@aol.com"))
+                                                                                                                   (make-coursenode 100.125 "Atomic Physics" "Mrs. Harrison" (list empty)
+                                                                                                                                    false
+                                                                                                                                    (make-coursenode 100.126  "the physics of hitting people with doors" "mrs adlym" empty false false))
+                                                                                                                   false)))
+
+(check-expect (add-course CSTREE 94.105 "even more Racket" "dr brendon") (make-coursenode 94.120 "Intro to CS" "Dillon"
+                                                                                          (list (make-student "Joe" "joemama@hotmail.com")
+                                                                                                (make-student "Kate" "Kate@gmail.com"))
+                                                                                          (make-coursenode 94.111 "Advanced Intro to CS" "Bill"
+                                                                                                           (list(make-student "Gina" "gina@gmail.com"))
+                                                                                                           (make-coursenode 94.105 "even more Racket" "dr brendon" empty false false)
+                                                                                                           false)
+                                                                                          (make-coursenode 94.150 "Systems" "David"
+                                                                                                           (list(make-student "Jessie" "Jess@gmail.com")
+                                                                                                                (make-student "Clara" "c@gmail.com"))
+                                                                                                           (make-coursenode 94.125 "C++" "George"
+                                                                                                                            (list (make-student "Charlie" "charlie@gmail.com"))
+                                                                                                                            false false)
+                                                                                                           (make-coursenode 94.170 "Algorithms" "Samuel"
+                                                                                                                            (list (make-student "Brandon" "brandie@gmail.com")
+                                                                                                                                  (make-student "Neal" "neal@yahoo.com")) false false))))
