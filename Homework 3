@@ -1,0 +1,209 @@
+
+;; Homework 3 - Lists of Structs
+
+;; Problem 1
+
+(define-struct menu-item (name kind vegetarian? quantity cost))
+;; Menu-item is (make-menu-item String String Boolean Natural Number)
+;; Interp. Represents an item on the menu where
+;;    name is the name of the item
+;;    kind is the type of item it is (appetizer, entree, dessert, or beverage)
+;;    vegetarian? is whether or not the item is vegetarian
+;;    quantity is the number of items that have been ordered
+;;    cost is the cost (in USD) of a single item
+
+;; examples of menu items
+(define CSALAD (make-menu-item "Caprese Salad" "appetizer" #true 5 7.99))
+(define STEAK (make-menu-item "Steak" "entree" #false 1 14.99))
+(define CCAKE (make-menu-item "Chocolate Cake" "dessert" #false 3 9.99))
+(define COKE (make-menu-item "Coca-Cola" "beverage" #true 1 4.99))
+
+;; Problem 2
+
+;; TEMPLATE FOR A MENU-ITEM FUNCTION
+
+;; fn-for-menu-item: Menu-item -> 
+;; ...
+
+#;
+(define (fn-for-menu-item an-item)
+  (... (menu-item-name an-item)        ; String
+       (menu-item-kind an-item)        ; String
+       (menu-item-vegetarian? an-item) ; Boolean
+       (menu-item-quantity an-item)    ; Natural
+       (menu-item-cost an-item)))      ; Number
+
+;; Problem 3
+
+;; Order is one of
+;;   empty
+;;   (cons Menu-item ListOfMenu-item)
+
+(define EMPTY-ORDER empty)
+(define MY-ORDER (list (make-menu-item "Water" "beverage" #true 1 1)
+                       (make-menu-item "House Salad" "appetizer" #true 1 5.99)
+                       (make-menu-item "Greek Wrap" "entree" #false 1 10.99)))
+(define YOUR-ORDER (list (make-menu-item "Cherry Pie" "dessert" #false 1 9.99)
+                         STEAK
+                         (make-menu-item "Fries" "appetizer" #true 2 6.99)
+                         COKE))
+
+;; Problem 4
+
+;; TEMPLATE FOR AN ORDER FUNCTION
+
+;; fn-for-order: Order ->
+;; ...
+
+#;
+(define (fn-for-order alomi)
+  (cond [(empty? alomi) ...]
+        [(cons? alomi) ... (first alomi)
+                       (fn-for-order (rest alomi))]))
+
+;; Problem 5
+
+;; appetizer? : Menu-item -> Boolean
+;; consumes a Menu-item and produces true if the item is an appetizer, else produces false
+(check-expect (appetizer? STEAK) #false)
+(check-expect (appetizer? CSALAD) #true)
+
+(define (appetizer? a-menu-item)
+  (string=? "appetizer" (menu-item-kind a-menu-item)))
+
+;; count-appetizers: Order -> Natural
+;; consumes an Order and returns the number of items in that order that are appetizers
+
+(check-expect (count-appetizers EMPTY-ORDER) 0)
+(check-expect (count-appetizers (list COKE STEAK CCAKE)) 0)
+(check-expect (count-appetizers (list (make-menu-item "Water" "beverage" #true 1 0)
+                                      STEAK
+                                      CSALAD)) 1)
+
+(define(count-appetizers an-order)
+  (cond [(empty? an-order) 0]
+        [(cons? an-order) (if (appetizer? (first an-order))
+                              (+ 1 (count-appetizers (rest an-order)))
+                              (count-appetizers(rest an-order)))]))
+
+;; Problem 6
+
+;; vegetarian? : Menu-item -> Boolean
+;; consumes a Menu-item and produces true if the item is vegetarian, else produces false
+
+(check-expect (vegetarian? STEAK) #false)
+(check-expect (vegetarian? CSALAD) #true)
+
+(define (vegetarian? a-menu-item)
+  (boolean=? #true (menu-item-vegetarian? a-menu-item)))
+
+;; more-expensive? : Menu-item Number -> Boolean
+;; consumes a Menu-item and a Number, produces true if the item is greater than the Number, else produces false
+(check-expect (more-expensive? CSALAD 8) #false)
+(check-expect (more-expensive? CSALAD 6) #true)
+
+(define (more-expensive? an-item a-number)
+  (> (menu-item-cost an-item) a-number))
+
+;; list-expensive-vegetarian: Order Number -> Order
+;; consumes an Order and a Number and produces only the items from the order that are
+;; vegetarian and cost more than the given Number
+
+(check-expect (list-expensive-vegetarian EMPTY-ORDER 15) empty)
+(check-expect (list-expensive-vegetarian (list STEAK CCAKE) 8) empty)
+(check-expect (list-expensive-vegetarian MY-ORDER 5) (list (make-menu-item "House Salad" "appetizer" #true 1 5.99)))
+(check-expect (list-expensive-vegetarian MY-ORDER 7) empty)
+
+
+(define (list-expensive-vegetarian an-order a-num)
+  (cond [(empty? an-order) empty]
+        [(cons? an-order) (if (and (vegetarian? (first an-order))
+                                   (more-expensive? (first an-order) a-num))                                                           
+                              (cons (first an-order) (list-expensive-vegetarian (rest an-order) a-num))
+                              (list-expensive-vegetarian (rest an-order) a-num))]))
+
+;; Problem 7
+
+;; price-and-quantity : Menu-item -> Number
+;; Consumes a Menu-item and produces its total cost (price multiplied by the quantity ordered) 
+(check-expect (price-and-quantity STEAK) (* 1 14.99))
+(check-expect (price-and-quantity CSALAD) (* 5 7.99))
+(check-expect (price-and-quantity (make-menu-item "Water" "beverage" #true 1 1)) (* 1 1))
+
+;; helper function price-and-quantity is used in Problems 7 & 8
+(define (price-and-quantity a-menu-item)
+  (* (menu-item-cost a-menu-item) (menu-item-quantity a-menu-item)))
+
+;; order-total : Order -> Number
+;; consumes an Order and produces its total cost (in USD)
+(check-expect (order-total EMPTY-ORDER) 0)
+(check-expect (order-total MY-ORDER) 17.98)
+(check-expect (order-total (list (make-menu-item "addy special" "dessert" false 100 1.11)
+                                 (make-menu-item "" "dessert" true 3 2.00)
+                                 (make-menu-item "" "beverage" false 1 2.00))) 119)
+
+(define (order-total an-order)
+  (cond [(empty? an-order) 0]
+        [(cons? an-order)  (+ (price-and-quantity (first an-order))
+                              (order-total (rest an-order)))]))
+
+;; Problem 8
+
+;; beverage? : Menu-item -> Boolean
+;; consumes a Menu-item and produces true if it is a beverage, else produce false
+(check-expect (beverage? COKE) #true)
+(check-expect (beverage? CSALAD) #false)
+
+;; helper function beverage? is used in Problems 8 & 9
+(define (beverage? a-menu-item)
+  (string=? "beverage" (menu-item-kind a-menu-item)))
+
+;; beverage-total: Order -> Number
+;; consumes an Order and produces the total cost of all the beverages in the Order
+(check-expect (beverage-total empty) 0)
+(check-expect (beverage-total (list COKE CCAKE)) 4.99)
+(check-expect (beverage-total MY-ORDER) 1)
+(check-expect (beverage-total (list (make-menu-item "Godzilla Juice" "beverage" #false 7 85.67) COKE)) 604.68)
+
+(define (beverage-total an-order)
+  (cond [(empty? an-order) 0]
+        [(cons? an-order) (if (beverage? (first an-order))
+                              (+ (price-and-quantity (first an-order))
+                                 (beverage-total (rest an-order)))
+                              (beverage-total (rest an-order)))]))
+
+;; Problem 9
+
+;; find-tip: Number -> Number
+;; consumes a Number representing the percentage tipped
+;; and produces that Number in the form of a tip (X.XX)
+(check-expect (find-tip 00) 1.00)
+(check-expect (find-tip 57) 1.57)
+(check-expect (find-tip 98) 1.98)
+(check-expect (find-tip 100) 2.00)
+(check-expect (find-tip 375) 4.75)
+
+(define (find-tip a-tip)
+  (+ 1 (/ a-tip 100)))
+
+;; cost-with-tip: Order Number -> Number
+;; consumes an Order and a Number (representing the percentage tipped)
+;; and produces the total cost with tip applied.
+;; tips only apply to non-beverage-items
+(check-expect (cost-with-tip empty 0) 0)
+(check-expect (cost-with-tip empty 800) 0)
+(check-within (cost-with-tip (list CCAKE) 45) 43.45 0.1)
+(check-within (cost-with-tip MY-ORDER 20) 21.38  0.01)                                         ; first item is a beverage
+(check-within (cost-with-tip (list CSALAD STEAK COKE) 738)465.39 0.01)                         ; last item is a beverage
+(check-within (cost-with-tip (list (make-menu-item "Water" "beverage" #true 1 1)
+                                   (make-menu-item "Godzilla Juice" "beverage" #false 7 85.67) 
+                                   COKE) 25) 605.68 0.01)                                      ; all items are beverages
+
+(define (cost-with-tip an-order a-tip)
+  (cond [(empty? an-order) 0]
+        [(cons? an-order) (if (beverage? (first an-order))
+                              (+ (price-and-quantity (first an-order))
+                                 (cost-with-tip (rest an-order) a-tip))
+                              (+ (* (find-tip a-tip) (price-and-quantity (first an-order)))
+                                 (cost-with-tip (rest an-order) a-tip)))]))
+                                 
