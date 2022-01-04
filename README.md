@@ -1,4 +1,4 @@
-# CS1101
+# WPI-CS1101
 
 This is a repository for WPI CS1101 Introduction to Program Design for A-term 2021 with Professor Engling.
 
